@@ -1,5 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras import layers, models
+from tensorflow.keras.datasets import cifar10
+from tensorflow.keras.utils import to_categorical
 
 # Define the residual block
 def residual_block(x, filters):
@@ -51,6 +53,13 @@ def build_resnet(input_shape, num_classes):
     model = models.Model(inputs, x)
     return model
 
+# Load and preprocess the CIFAR-10 dataset
+(x_train, y_train), (x_test, y_test) = cifar10.load_data()
+x_train = x_train.astype('float32') / 255.0  # Normalize to [0, 1]
+x_test = x_test.astype('float32') / 255.0
+y_train = to_categorical(y_train, 10)  # One-hot encode labels
+y_test = to_categorical(y_test, 10)
+
 # Create the model
 input_shape = (32, 32, 3)  # Example input shape for CIFAR-10
 num_classes = 10  # Number of classes in CIFAR-10
@@ -59,5 +68,13 @@ model = build_resnet(input_shape, num_classes)
 # Compile the model
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
-# Summary of the model
-model.summary()
+# Train the model
+model.fit(x_train, y_train, epochs=20, batch_size=64, validation_data=(x_test, y_test))
+
+# Evaluate the model
+test_loss, test_acc = model.evaluate(x_test, y_test)
+print(f'Test accuracy: {test_acc:.4f}')
+
+# Make predictions (optional)
+predictions = model.predict(x_test)
+predicted_classes = tf.argmax(predictions, axis=1)
